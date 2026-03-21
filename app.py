@@ -37,7 +37,7 @@ def load_embedding_model():
 # Load ChromaDB
 @st.cache_resource
 def load_chroma_collection():
-    chroma_client = chromadb.PersistentClient(path="data/chroma_db")
+    chroma_client = chromadb.PersistentClient(path="/tmp/chroma_db")
     return chroma_client.get_or_create_collection(name="privacy_policy")
 
 embedding_model = load_embedding_model()
@@ -54,7 +54,18 @@ def chunk_text(text, chunk_size=500, overlap=50):
     return chunks
 
 # Retrieve relevant chunks from ChromaDB
-def retrieve_relevant_chunks(question, n_results=5):
+def retrieve_relevant_chunks(question, text, n_results=5):
+    # Re-embed and store if collection is empty
+    if collection.count() == 0:
+        chunks = chunk_text(text)
+        for i, chunk in enumerate(chunks):
+            embedding = embedding_model.encode(chunk).tolist()
+            collection.add(
+                ids=[f"chunk_{i}"],
+                embeddings=[embedding],
+                documents=[chunk]
+            )
+
     question_embedding = embedding_model.encode(question).tolist()
     results = collection.query(
         query_embeddings=[question_embedding],
@@ -97,16 +108,19 @@ def build_prompt(question, chunks):
     return prompt
 
 # Analyze privacy risk
-def analyze_privacy_risk(question):
-    chunks = retrieve_relevant_chunks(question)
-    prompt = build_prompt(question, chunks)
-    response = client.models.generate_content(
-        model="gemini-flash-latest",
-        contents=prompt
-    )
-    return response.text
+def analyze_privacy_risk(question, text):
+    try:
+        chunks = retrieve_relevant_chunks(question, text)
+        prompt = build_prompt(question, chunks)
+        response = client.models.generate_content(
+            model="gemini-flash-latest",
+            contents=prompt
+        )
+        return response.text
+    except Exception as e:
+        return f"Error: {str(e)}"
 
-    # Initialize chat history in session state
+# Initialize chat history in session state
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
@@ -153,7 +167,7 @@ if analyze_button:
         st.warning("Please enter a question!")
     else:
         with st.spinner("Analyzing privacy risks..."):
-            result = analyze_privacy_risk(question)
+            result = analyze_privacy_risk(question, st.session_state.policy_text)
 
             # Add to chat history
             st.session_state.chat_history.append({
