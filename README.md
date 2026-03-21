@@ -1,14 +1,14 @@
  # Privacy Policy & Terms Analyzer — RAG Application
 
- An AI powered privacy risk analyzer built using Retrival Agumented Generation (RAG).
+ An AI powered privacy risk analyzer built using Retrieval Agumented Generation (RAG).
  
- Upload any terms & conditions txt files and instantly detect potential risk and feedback using semantic search and Google Gemini
+ Upload any terms & conditions .txt files and instantly detect potential privacy risk and feedback using semantic search and Google Gemini
  
  Also Deployed on Streamlit Cloud 
  
  [Privacy Risk Analyzer](https://rag-privacy-analyzer-yash.streamlit.app/)
 
- The Application follows two step architecture
+ The Application follows a two step architecture
  
  **Data Ingestion Phase**
  
